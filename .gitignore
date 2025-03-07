@@ -5,3 +5,4 @@ tmp
 pocketbase
 .vscode
 .idea
+node_modules
