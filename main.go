@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/huakunshen/ip-geo-cache-pb/lib"
 	_ "github.com/huakunshen/ip-geo-cache-pb/migrations"
@@ -63,6 +64,13 @@ func saveIpRecord(app *pocketbase.PocketBase, ip string, ipInfo *lib.IpInfo) (*m
 	return ipRecord, nil
 }
 
+// Helper function to check if cache is valid
+func isCacheValid(record *models.Record) bool {
+	updated := record.Updated
+	// Cache invalidation after 7 days
+	return time.Since(updated.Time()) < 7*24*time.Hour
+}
+
 func main() {
 	app := pocketbase.New()
 	// load env if exists
@@ -96,11 +104,11 @@ func main() {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		// e.Router.GET("/*", apis.StaticDirectoryHandler(os.DirFS("./pb_public"), false))
 		// Basic IP info route
-		e.Router.GET("/api/basic-ip-info/:ip", func(c echo.Context) error {
+		e.Router.GET("/api/ip-geo/:ip", func(c echo.Context) error {
 			ip := c.PathParam("ip")
 			ipCache, err := app.Dao().FindFirstRecordByData("ips", "ip", ip)
 
-			if ipCache == nil || err != nil {
+			if ipCache == nil || err != nil || !isCacheValid(ipCache) {
 				ipInfo, err := fetchIpInfo(ip, apiKey)
 				if err != nil {
 					return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -128,11 +136,11 @@ func main() {
 		})
 
 		// Full IP info route
-		e.Router.GET("/api/full-ip-info/:ip", func(c echo.Context) error {
+		e.Router.GET("/api/info/:ip", func(c echo.Context) error {
 			ip := c.PathParam("ip")
 			ipCache, err := app.Dao().FindFirstRecordByData("ips", "ip", ip)
 
-			if ipCache == nil || err != nil {
+			if ipCache == nil || err != nil || !isCacheValid(ipCache) {
 				ipInfo, err := fetchIpInfo(ip, apiKey)
 				if err != nil {
 					return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})

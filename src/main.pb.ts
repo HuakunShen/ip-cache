@@ -11,7 +11,7 @@ routerAdd("GET", "/hello/{name}", (e) => {
   return e.json(200, { message: "Hello " + name });
 });
 
-routerAdd("GET", "/api/basic-ip-info/{ip}", async (e) => {
+routerAdd("GET", "/api/ip-geo/{ip}", async (e) => {
   const apiKey = $os.getenv("IP_GEOLOCATION_API_KEY");
   const ip = e.request?.pathValue("ip");
   if (!ip) {
@@ -42,7 +42,7 @@ routerAdd("GET", "/api/basic-ip-info/{ip}", async (e) => {
   }
 });
 
-routerAdd("GET", "/api/full-ip-info/{ip}", async (e) => {
+routerAdd("GET", "/api/info/{ip}", async (e) => {
   const apiKey = $os.getenv("IP_GEOLOCATION_API_KEY");
   const ip = e.request?.pathValue("ip");
   if (!ip) {

@@ -18,8 +18,10 @@ I wrote 2 versions, one with go and one with js hook.
 Go is more performant, more flexible and easier to add more features.
 The JS hook version is created to deploy to pockethost.
 
-- `http://localhost:8090/api/full-ip-info/1.1.1.1`
-- `http://localhost:8090/api/basic-ip-info/1.1.1.1`
+- `http://localhost:8090/api/info/1.1.1.1`
+- `http://localhost:8090/api/ip-geo/1.1.1.1`
+
+To switch languages, please remove `pb_data` first.
 
 ## Usage (Go)
 
