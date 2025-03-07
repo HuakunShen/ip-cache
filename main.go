@@ -19,6 +19,50 @@ import (
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 )
 
+// Helper function to fetch IP info from the API
+func fetchIpInfo(ip string, apiKey string) (*lib.IpInfo, error) {
+	url := fmt.Sprintf("https://api.ipgeolocation.io/ipgeo?apiKey=%s&ip=%s", apiKey, ip)
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var ipInfo lib.IpInfo
+	err = json.Unmarshal(body, &ipInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ipInfo, nil
+}
+
+// Helper function to save IP info to the database
+func saveIpRecord(app *pocketbase.PocketBase, ip string, ipInfo *lib.IpInfo) (*models.Record, error) {
+	ipCollection, err := app.Dao().FindCollectionByNameOrId("ips")
+	if err != nil {
+		return nil, err
+	}
+
+	ipRecord := models.NewRecord(ipCollection)
+	ipRecord.Set("ip", ip)
+	ipRecord.Set("info", ipInfo)
+	ipRecord.Set("country", ipInfo.CountryName)
+	ipRecord.Set("latitude", ipInfo.Latitude)
+	ipRecord.Set("longitude", ipInfo.Longitude)
+
+	if err := app.Dao().SaveRecord(ipRecord); err != nil {
+		return nil, err
+	}
+
+	return ipRecord, nil
+}
+
 func main() {
 	app := pocketbase.New()
 	// load env if exists
@@ -51,54 +95,59 @@ func main() {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		// e.Router.GET("/*", apis.StaticDirectoryHandler(os.DirFS("./pb_public"), false))
-		// get request: /api/<ip>
-		e.Router.GET("/api/:ip", func(c echo.Context) error {
+		// Basic IP info route
+		e.Router.GET("/api/basic-ip-info/:ip", func(c echo.Context) error {
 			ip := c.PathParam("ip")
-			// check if ip is in the ips collection
-			ipCollection, err := app.Dao().FindCollectionByNameOrId("ips")
-			if err != nil {
-				fmt.Println("after find collection", err)
-				return c.JSON(http.StatusInternalServerError, err)
-			}
 			ipCache, err := app.Dao().FindFirstRecordByData("ips", "ip", ip)
+
 			if ipCache == nil || err != nil {
-				// https://api.ipgeolocation.io/ipgeo?apiKey={ip}&ip={ip}
-				// send request to ipgeolocation
-				url := fmt.Sprintf("https://api.ipgeolocation.io/ipgeo?apiKey=%s&ip=%s", apiKey, ip)
-				app.Logger().Debug("Sending request to ipgeolocation: ", "url", url)
-
-				resp, err := http.Get(url)
+				ipInfo, err := fetchIpInfo(ip, apiKey)
 				if err != nil {
-					fmt.Println(err)
-					return c.JSON(http.StatusInternalServerError, err)
-				}
-				defer resp.Body.Close()
-				body, err := io.ReadAll(resp.Body)
-				if err != nil {
-					return c.JSON(http.StatusInternalServerError, err)
+					return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 				}
 
-				// model defined in lib/model.go as IpInfo
-				var ipInfo lib.IpInfo
-				err = json.Unmarshal(body, &ipInfo)
+				_, err = saveIpRecord(app, ip, ipInfo)
 				if err != nil {
-					return c.JSON(http.StatusInternalServerError, err)
+					return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 				}
-				app.Logger().Info("Cache not hit for ip: ", "ip", ip, "body", ipInfo)
-
-				// save to ips collection
-				ipRecord := models.NewRecord(ipCollection)
-				ipRecord.Set("ip", ip)
-				ipRecord.Set("info", ipInfo)
-				ipRecord.Set("country", ipInfo.CountryName)
-				ipRecord.Set("latitude", ipInfo.Latitude)
-				ipRecord.Set("longitude", ipInfo.Longitude)
-				app.Dao().SaveRecord(ipRecord)
-				return c.JSON(http.StatusOK, ipRecord)
-			} else {
-				app.Logger().Info("Cache hit for ip: " + ip)
-				return c.JSON(http.StatusOK, ipCache)
+				fmt.Println("cache miss for ip: ", ip)
+				return c.JSON(http.StatusOK, map[string]interface{}{
+					"country":   ipInfo.CountryName,
+					"latitude":  ipInfo.Latitude,
+					"longitude": ipInfo.Longitude,
+				})
 			}
+
+			fmt.Println("cache hit for ip: ", ip)
+			app.Logger().Info("Cache hit for ip: " + ip)
+			return c.JSON(http.StatusOK, map[string]interface{}{
+				"country":   ipCache.Get("country"),
+				"latitude":  ipCache.Get("latitude"),
+				"longitude": ipCache.Get("longitude"),
+			})
+		})
+
+		// Full IP info route
+		e.Router.GET("/api/full-ip-info/:ip", func(c echo.Context) error {
+			ip := c.PathParam("ip")
+			ipCache, err := app.Dao().FindFirstRecordByData("ips", "ip", ip)
+
+			if ipCache == nil || err != nil {
+				ipInfo, err := fetchIpInfo(ip, apiKey)
+				if err != nil {
+					return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				}
+
+				ipRecord, err := saveIpRecord(app, ip, ipInfo)
+				if err != nil {
+					return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				}
+				fmt.Println("cache miss for ip: ", ip)
+				return c.JSON(http.StatusOK, ipRecord.Get("info"))
+			}
+			fmt.Println("cache hit for ip: ", ip)
+			app.Logger().Info("Cache hit for ip: " + ip)
+			return c.JSON(http.StatusOK, ipCache.Get("info"))
 		})
 		return nil
 	})

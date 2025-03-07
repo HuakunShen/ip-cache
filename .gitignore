@@ -6,3 +6,4 @@ pocketbase
 .vscode
 .idea
 node_modules
+.DS_Store

@@ -13,4 +13,23 @@ make run # run docker image on port 8090
 
 ## Usage
 
-Send request to `http://localhost:8090/api/1.1.1.1
+I wrote 2 versions, one with go and one with js hook.
+
+Go is more performant, more flexible and easier to add more features.
+The JS hook version is created to deploy to pockethost.
+
+- `http://localhost:8090/api/full-ip-info/1.1.1.1`
+- `http://localhost:8090/api/basic-ip-info/1.1.1.1`
+
+## Usage (Go)
+
+Install `air` and run `air` to develop.
+
+## Usage (JS Hook)
+
+To develop locally,
+
+1. Run `bun dev`
+2. Download pocketbase 0.25.\* to root and run `./pocketbase serve`.
+
+To deploy to pockethost, copy the `pb_migrations` and `pb_hooks` to pockethost with FTP.
