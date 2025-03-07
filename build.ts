@@ -17,7 +17,7 @@ async function build() {
   console.log("building...");
   try {
     await Bun.build({
-      entrypoints: ["src/main.pb.ts"],
+      entrypoints: ["src/main.pb.ts", "src/lib.ts"],
       outdir: "pb_hooks",
       //   root: "./src",
       format: "cjs",

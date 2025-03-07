@@ -8,58 +8,62 @@
 
 routerAdd("GET", "/hello/{name}", (e) => {
   let name = e.request?.pathValue("name");
-
   return e.json(200, { message: "Hello " + name });
 });
 
-routerAdd("GET", "/api/full-ip-info/{ip}", (e) => {
+routerAdd("GET", "/api/basic-ip-info/{ip}", async (e) => {
   const apiKey = $os.getenv("IP_GEOLOCATION_API_KEY");
-  $app.logger().debug(`apiKey: ${apiKey}`);
   const ip = e.request?.pathValue("ip");
   if (!ip) {
     return e.json(400, { error: "IP address is required" });
   }
-  // fetch from DB
-  let record;
+  const lib = require(`${__hooks}/lib.js`);
   try {
-    record = $app.findFirstRecordByData("ips", "ip", ip);
-    const updated = new Date(record.get("updated"));
-    if (updated > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) {
-      // if updated within a week
+    const record = lib.getCachedRecord(ip);
+    if (record && lib.isCacheValid(record)) {
       $app.logger().info("Cache hit for ip: ", { ip });
-      console.log(`Cache hit for ip: ${ip}`);
-      return e.json(200, record.get("info"));
-    } else {
-      console.log(`Cache miss for ip: ${ip}`);
+      return e.json(200, {
+        country: record.get("country"),
+        latitude: record.get("latitude"),
+        longitude: record.get("longitude"),
+      });
     }
-  } catch (error) {}
-  const url = `https://api.ipgeolocation.io/ipgeo?apiKey=${apiKey}&ip=${ip}`;
-  $app.logger().info("Sending request to ipgeolocation: ", { url });
-  const response = $http.send({
-    url,
-    method: "GET",
-  });
-  if (response.statusCode !== 200) {
-    $app.logger().error("Failed to fetch IP geolocation data: ", {
-      statusCode: response.statusCode,
-      body: response.raw,
-    });
-    return e.json(500, { error: "Failed to fetch IP geolocation data" });
-  }
-  const ipInfo = response.json;
-  $app.logger().debug("IP geolocation data: ", { ipInfo });
-  if (!record) {
-    let collection = $app.findCollectionByNameOrId("ips");
-    record = new Record(collection);
-  }
-  record.set("ip", ip);
-  record.set("info", ipInfo);
-  record.set("country", ipInfo.country_name);
-  record.set("latitude", ipInfo.latitude);
-  record.set("longitude", ipInfo.longitude);
-  $app.save(record);
 
-  return e.json(200, response.json);
+    const ipInfo = lib.fetchIpInfo(ip, apiKey);
+    lib.saveIpRecord(ip, ipInfo);
+
+    return e.json(200, {
+      country: ipInfo.country_name,
+      latitude: ipInfo.latitude,
+      longitude: ipInfo.longitude,
+    });
+  } catch (error: any) {
+    return e.json(500, { error: error.message || "An unknown error occurred" });
+  }
+});
+
+routerAdd("GET", "/api/full-ip-info/{ip}", async (e) => {
+  const apiKey = $os.getenv("IP_GEOLOCATION_API_KEY");
+  const ip = e.request?.pathValue("ip");
+  if (!ip) {
+    return e.json(400, { error: "IP address is required" });
+  }
+  const lib = require(`${__hooks}/lib.js`);
+
+  try {
+    const record = lib.getCachedRecord(ip);
+    if (record && lib.isCacheValid(record)) {
+      $app.logger().info("Cache hit for ip: ", { ip });
+      return e.json(200, record.get("info"));
+    }
+
+    const ipInfo = lib.fetchIpInfo(ip, apiKey);
+    lib.saveIpRecord(ip, ipInfo);
+
+    return e.json(200, ipInfo);
+  } catch (error: any) {
+    return e.json(500, { error: error.message || "An unknown error occurred" });
+  }
 });
 
 onRecordAfterUpdateSuccess((e) => {
