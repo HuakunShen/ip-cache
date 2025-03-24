@@ -30,6 +30,6 @@ jobs:
         id: check_version
       - name: Publish
         if: steps.check_version.outcome != 'success'
-        run: npm publish --provenance --access public
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
