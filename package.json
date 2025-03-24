@@ -2,6 +2,10 @@
   "name": "ip-cache",
   "module": "index.ts",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/huakunshen/ip-cache"
+  },
   "scripts": {
     "build": "bun build.ts",
     "dev": "bun build.ts --dev"
