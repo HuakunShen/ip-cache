@@ -4,10 +4,7 @@
   "type": "module",
   "license": "MIT",
   "version": "0.0.2",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/huakunshen/ip-cache.git"
-  },
+  "repository": "https://github.com/HuakunShen/ip-cache",
   "scripts": {
     "build": "bun build.ts",
     "dev": "bun build.ts --dev"
