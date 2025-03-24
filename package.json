@@ -1,5 +1,5 @@
 {
-  "name": "ip-geo-cache-pb",
+  "name": "ip-cache",
   "module": "index.ts",
   "type": "module",
   "scripts": {
@@ -11,5 +11,9 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "pocketbase": "^0.25.2",
+    "valibot": "^1.0.0"
   }
 }

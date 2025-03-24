@@ -1,4 +1,4 @@
-# ip-geo-cache-pb
+# ip-cache
 
 This is a IP to geolocation lookup server with cache.
 
