@@ -6,7 +6,7 @@
   "version": "0.0.2",
   "repository": {
     "type": "git",
-    "url": "https://github.com/huakunshen/ip-cache.git"
+    "url": "git+https://github.com/huakunshen/ip-cache.git"
   },
   "scripts": {
     "build": "bun build.ts",
