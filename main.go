@@ -30,7 +30,9 @@ func main() {
 	// isGoRun := strings.HasPrefix(os.Args[0], os.TempDir()) || strings.Contains(os.Args[0], "JetBrains")
 	// fmt.Println("isGoRun", isGoRun)
 	isGoRun := strings.HasPrefix(os.Args[0], os.TempDir())
-
+	fmt.Println("os.Args[0]", os.Args[0])
+	fmt.Println("os.TempDir()", os.TempDir())
+	fmt.Println("isGoRun", isGoRun)
 	migratecmd.MustRegister(app, app.RootCmd, migratecmd.Config{
 		// enable auto creation of migration files when making collection changes in the Dashboard
 		// (the isGoRun check is to enable it only during development)
@@ -42,31 +44,30 @@ func main() {
 		// se.Router.GET("/{path...}", apis.Static(os.DirFS("./pb_public"), false))
 		se.Router.GET("/api/ip-geo/{ip}", func(e *core.RequestEvent) error {
 			ip := e.Request.PathValue("ip")
-			ipCache, err := app.FindFirstRecordByData("ips", "ip", ip)
-			if ipCache == nil || err != nil || !isCacheValid(ipCache) {
+			record, err := app.FindFirstRecordByData("ips", "ip", ip)
+
+			if record == nil || err != nil || !isCacheValid(record) {
 				ipInfo, err := fetchIpInfo(ip, apiKey)
 				if err != nil {
 					return e.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 				}
 
-				_, err = saveIpRecord(app, ip, ipInfo)
+				record, err = saveIpRecord(app, ip, ipInfo)
 				if err != nil {
 					return e.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 				}
 				fmt.Println("cache miss for ip: ", ip)
-				return e.JSON(http.StatusOK, map[string]interface{}{
-					"country":   ipInfo.CountryName,
-					"latitude":  ipInfo.Latitude,
-					"longitude": ipInfo.Longitude,
-				})
+			} else {
+				fmt.Println("cache hit for ip: ", ip)
+				app.Logger().Info("Cache hit for ip: " + ip)
 			}
 
-			fmt.Println("cache hit for ip: ", ip)
-			app.Logger().Info("Cache hit for ip: " + ip)
+			var info lib.IpInfo
+			record.UnmarshalJSONField("info", &info)
 			return e.JSON(http.StatusOK, map[string]interface{}{
-				"country":   ipCache.Get("country"),
-				"latitude":  ipCache.Get("latitude"),
-				"longitude": ipCache.Get("longitude"),
+				"country":   info.CountryName,
+				"latitude":  info.Latitude,
+				"longitude": info.Longitude,
 			})
 		})
 

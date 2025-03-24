@@ -68,8 +68,8 @@ export class IpCache {
 
   async getIpGeoInfo(ip: string): Promise<{
     country: string;
-    latitude: number;
-    longitude: number;
+    latitude: string;
+    longitude: string;
   }> {
     const response = await fetch(`${this.url}/api/ip-geo/${ip}`);
     const data = await response.json();
