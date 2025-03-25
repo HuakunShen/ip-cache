@@ -119,6 +119,10 @@ func fetchIpInfo(ip string, apiKey string) (*lib.IpInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Check if the IP address is empty in the response
+	if ipInfo.IP == "" {
+		return nil, fmt.Errorf("failed to fetch IP information")
+	}
 
 	return &ipInfo, nil
 }
