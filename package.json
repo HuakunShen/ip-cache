@@ -3,21 +3,20 @@
   "module": "index.ts",
   "type": "module",
   "license": "MIT",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "repository": "https://github.com/HuakunShen/ip-cache",
   "scripts": {
     "build": "bun build.ts",
     "dev": "bun build.ts --dev"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "p-limit": "^6.2.0",
+    "pocketbase": "^0.25.2",
+    "valibot": "^1.0.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
-  "dependencies": {
-    "p-limit": "^6.2.0",
-    "pocketbase": "^0.25.2",
-    "valibot": "^1.0.0"
-  }
+  "dependencies": {}
 }
