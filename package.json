@@ -16,6 +16,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "p-limit": "^6.2.0",
     "pocketbase": "^0.25.2",
     "valibot": "^1.0.0"
   }
