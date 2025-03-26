@@ -35,3 +35,17 @@ To develop locally,
 2. Download pocketbase 0.25.\* to root and run `./pocketbase serve`.
 
 To deploy to pockethost, copy the `pb_migrations` and `pb_hooks` to pockethost with FTP.
+
+## Library
+
+```bash
+npm install ip-cache
+```
+
+```ts
+import { IpCache } from "ip-cache";
+
+const ipCache = new IpCache("https://<your-pocketbase-url>");
+const ipInfo = await ipCache.getIpInfo("1.1.1.1");
+console.log(ipInfo);
+```

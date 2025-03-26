@@ -1,4 +1,3 @@
-import { $ } from "bun";
 import { watch } from "fs";
 import { parseArgs } from "util";
 

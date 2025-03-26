@@ -1,21 +1,27 @@
 {
   "name": "ip-cache",
-  "module": "index.ts",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "type": "module",
   "license": "MIT",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "repository": "https://github.com/HuakunShen/ip-cache",
+  "files": [
+    "dist",
+    "README.md",
+    "index.ts"
+  ],
   "scripts": {
     "build": "bun build.ts",
-    "dev": "bun build.ts --dev"
+    "dev": "bun build.ts --dev",
+    "bundle": "tsc",
+    "prepublishOnly": "npm run bundle"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "p-limit": "^6.2.0",
     "pocketbase": "^0.25.2",
-    "valibot": "^1.0.0"
-  },
-  "peerDependencies": {
+    "valibot": "^1.0.0",
     "typescript": "^5.0.0"
   },
   "dependencies": {}
